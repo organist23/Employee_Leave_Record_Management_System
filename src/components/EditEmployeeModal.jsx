@@ -9,9 +9,9 @@ const EditEmployeeModal = ({ employee, onDelete, onClose }) => {
     ...employee
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateEmployee(formData);
+    await updateEmployee(formData);
     onClose();
   };
 

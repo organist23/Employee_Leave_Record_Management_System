@@ -8,7 +8,7 @@ const EditBalanceModal = ({ employee, onClose }) => {
   const { updateEmployeeBalances } = useApp();
   const [balances, setBalances] = useState({ ...employee.balances });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Only send what changed
@@ -26,7 +26,7 @@ const EditBalanceModal = ({ employee, onClose }) => {
     });
 
     if (hasChanges) {
-      updateEmployeeBalances(employee.id, changes);
+      await updateEmployeeBalances(employee.id, changes);
     }
     
     onClose();

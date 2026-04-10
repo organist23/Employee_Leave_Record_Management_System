@@ -17,9 +17,9 @@ const RegisterEmployeeModal = ({ onClose }) => {
     office: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addEmployee(formData);
+    await addEmployee(formData);
     onClose();
   };
 

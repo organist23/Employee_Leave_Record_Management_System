@@ -10,11 +10,11 @@ const GenerateCreditsModal = ({ onClose }) => {
 
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      generateMonthlyCredits(month, year);
+      await generateMonthlyCredits(month, year);
       onClose();
     } catch (err) {
       setError(err.message);

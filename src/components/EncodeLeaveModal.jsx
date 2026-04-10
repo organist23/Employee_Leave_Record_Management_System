@@ -40,7 +40,7 @@ const EncodeLeaveModal = ({ employee, onClose }) => {
     { name: 'Solo Parent Leave', category: 'Privilege', limit: PRIVILEGE_LIMITS.soloParentLeave },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -75,7 +75,7 @@ const EncodeLeaveModal = ({ employee, onClose }) => {
       }
     }
 
-    addApplication({
+    await addApplication({
       employeeId: employee.id,
       employeeName: employee.fullName,
       ...formData,

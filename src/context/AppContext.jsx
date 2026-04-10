@@ -16,22 +16,36 @@ export const AppProvider = ({ children }) => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const refreshData = () => {
-    const employees = StorageService.getEmployees();
-    const applications = StorageService.getApplications();
-    const ledger = StorageService.getLedger();
-    setData({ employees, applications, ledger });
-    setLoading(false);
+  const refreshData = async () => {
+    try {
+      const employees = await StorageService.getEmployees();
+      const applications = await StorageService.getApplications();
+      const ledger = await StorageService.getLedger();
+      setData({ employees, applications, ledger });
+    } catch (err) {
+      console.error('Failed to refresh data:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const login = (email, password) => {
-    if (email === 'admin' && password === 'admin123') {
-      const adminUser = { email: 'admin', role: 'Administrator' };
-      setUser(adminUser);
-      localStorage.setItem('elrms_user', JSON.stringify(adminUser));
-      return { success: true };
+  const login = async (email, password) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUser(data.user);
+        localStorage.setItem('elrms_user', JSON.stringify(data.user));
+        return { success: true };
+      }
+      return { success: false, message: data.message || 'Invalid credentials.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection failed. Is the backend running?' };
     }
-    return { success: false, message: 'Invalid credentials. Please use admin / admin123' };
   };
 
   const logout = () => {
@@ -43,44 +57,44 @@ export const AppProvider = ({ children }) => {
     refreshData();
   }, []);
 
-  const addEmployee = (emp) => {
-    StorageService.addEmployee(emp);
-    refreshData();
+  const addEmployee = async (emp) => {
+    await StorageService.addEmployee(emp);
+    await refreshData();
   };
 
-  const updateEmployee = (emp) => {
-    StorageService.updateEmployee(emp);
-    refreshData();
+  const updateEmployee = async (emp) => {
+    await StorageService.updateEmployee(emp);
+    await refreshData();
   };
 
-  const updateEmployeeBalances = (id, balances) => {
-    StorageService.updateEmployeeBalances(id, balances);
-    refreshData();
+  const updateEmployeeBalances = async (id, balances) => {
+    await StorageService.updateEmployeeBalances(id, balances);
+    await refreshData();
   };
 
-  const deleteEmployee = (id) => {
-    StorageService.deleteEmployee(id);
-    refreshData();
+  const deleteEmployee = async (id) => {
+    await StorageService.deleteEmployee(id);
+    await refreshData();
   };
 
-  const addApplication = (app) => {
-    StorageService.addApplication(app);
-    refreshData();
+  const addApplication = async (app) => {
+    await StorageService.addApplication(app);
+    await refreshData();
   };
 
-  const approveApplication = (id) => {
-    StorageService.approveApplication(id);
-    refreshData();
+  const approveApplication = async (id) => {
+    await StorageService.approveApplication(id);
+    await refreshData();
   };
 
-  const rejectApplication = (id) => {
-    StorageService.rejectApplication(id);
-    refreshData();
+  const rejectApplication = async (id) => {
+    await StorageService.rejectApplication(id);
+    await refreshData();
   };
 
-  const generateMonthlyCredits = (m, y) => {
-    StorageService.generateMonthlyCredits(m, y);
-    refreshData();
+  const generateMonthlyCredits = async (m, y) => {
+    await StorageService.generateMonthlyCredits(m, y);
+    await refreshData();
   };
 
   return (

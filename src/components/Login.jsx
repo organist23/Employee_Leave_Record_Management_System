@@ -15,13 +15,11 @@ const Login = () => {
     setError('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const result = login(email, password);
-      if (!result.success) {
-        setError(result.message);
-        setIsSubmitting(false);
-      }
-    }, 800);
+    const result = await login(email, password);
+    if (!result.success) {
+      setError(result.message);
+      setIsSubmitting(false);
+    }
   };
 
   return (

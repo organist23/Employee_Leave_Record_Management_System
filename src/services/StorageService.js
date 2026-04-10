@@ -1,298 +1,150 @@
-import { LEAVE_DEFAULTS, addMonthlyCredits, calculateDeduction } from '../utils/leaveLogic';
+// src/services/StorageService.js
+// Replaced: localStorage → MySQL via Express API
+// All function signatures preserved for AppContext compatibility
 
-const STORAGE_KEY = 'elrms_data_v1';
-
-const INITIAL_DATA = {
-  employees: [
-    {
-      id: 'EMP-2013-001',
-      fullName: 'PARAGAS, BRENDALIE C.',
-      status: 'PERMANENT',
-      isActive: true,
-      civilStatus: 'MARRIED',
-      gsisPolicy: '2001556677',
-      position: 'MUNICIPAL ACCOUNTANT',
-      entranceOfDuty: '2013-09-02',
-      tin: '123-456-789',
-      office: 'MACCO',
-      balances: { ...LEAVE_DEFAULTS }
-    },
-    {
-      id: 'EMP-2013-002',
-      fullName: 'GUIMBA, KEIPHIL P..',
-      status: 'PERMANENT',
-      isActive: true,
-      civilStatus: 'SINGLE',
-      gsisPolicy: '2456465456',
-      position: 'MUNICIPAL ACCOUNTANT',
-      entranceOfDuty: '2025-09-02',
-      tin: '123-456-789',
-      office: 'HR',
-      balances: { ...LEAVE_DEFAULTS }
-    },
-    {
-      id: 'EMP-2013-003',
-      fullName: 'MANGUPAG, CHRISTINE C.',
-      status: 'PERMANENT',
-      isActive: true,
-      civilStatus: 'MARRIED',
-      gsisPolicy: '2023424232',
-      position: 'MUNICIPAL ACCOUNTANT',
-      entranceOfDuty: '2013-09-02',
-      tin: '123-456-789',
-      office: 'MACCO',
-      balances: { ...LEAVE_DEFAULTS }
-    }
-  ],
-  applications: [],
-  ledger: [],
-  generatedPeriods: [],
-  lastResetYear: new Date().getFullYear()
-};
+const API_BASE = 'http://localhost:5000/api';
 
 class StorageService {
   constructor() {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      const data = { ...INITIAL_DATA };
-      this.addLedgerEntry('EMP-2013-001', 'Initial Balance Setup', 'COMPLETED', data);
-      this.save(data);
-    } else {
-      this.checkAndResetYearlyPrivileges();
-    }
+    // Trigger yearly reset check on startup
+    this.checkAndResetYearlyPrivileges();
   }
 
-  save(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // ==================== EMPLOYEES ====================
+
+  async getEmployees() {
+    const res = await fetch(`${API_BASE}/employees`);
+    if (!res.ok) throw new Error('Failed to fetch employees');
+    return res.json();
   }
 
-  getData() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      this.save(INITIAL_DATA);
-      return INITIAL_DATA;
-    }
-    return JSON.parse(raw);
+  async getEmployeeById(id) {
+    const res = await fetch(`${API_BASE}/employees/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch employee');
+    return res.json();
   }
 
-  getEmployees() {
-    return this.getData().employees;
-  }
-
-  getEmployeeById(id) {
-    return this.getEmployees().find(emp => emp.id === id);
-  }
-
-  addEmployee(employee) {
-    const data = this.getData();
-    const newEmployee = {
-      ...employee,
-      isActive: true,
-      balances: { ...LEAVE_DEFAULTS }
-    };
-    data.employees.push(newEmployee);
-    this.addLedgerEntry(newEmployee.id, 'Employee Registered', 'COMPLETED', data);
-    this.save(data);
-    return newEmployee;
-  }
-
-  updateEmployee(updatedEmp) {
-    const data = this.getData();
-    data.employees = data.employees.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp);
-    this.addLedgerEntry(updatedEmp.id, 'Profile Information Updated by Admin', 'COMPLETED', data);
-    this.save(data);
-  }
-
-  updateEmployeeBalances(employeeId, newBalances) {
-    const data = this.getData();
-    const emp = data.employees.find(e => e.id === employeeId);
-    if (!emp) return;
-
-    const changes = [];
-    const updatedBalances = { ...emp.balances };
-
-    Object.keys(newBalances).forEach(key => {
-      const oldValue = parseFloat(emp.balances[key] || 0);
-      const newValue = parseFloat(newBalances[key]);
-      
-      if (oldValue !== newValue) {
-        updatedBalances[key] = newValue;
-        const label = this.getLeaveLabel(key);
-        changes.push(`${label}: ${oldValue.toFixed(3)} -> ${newValue.toFixed(3)}`);
-      }
+  async addEmployee(employee) {
+    const res = await fetch(`${API_BASE}/employees`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(employee)
     });
-
-    if (changes.length === 0) return;
-
-    emp.balances = updatedBalances;
-    const transactionDesc = `Manual Correction: ${changes.join(', ')}`;
-
-    this.addLedgerEntry(employeeId, transactionDesc, 'COMPLETED', data);
-    this.save(data);
-  }
-
-  getLeaveLabel(key) {
-    const labels = {
-      vacationLeave: 'VL',
-      sickLeave: 'SL',
-      specialLeave: 'Special',
-      forceLeave: 'Force',
-      wellnessLeave: 'Wellness',
-      soloParentLeave: 'Solo Parent'
-    };
-    return labels[key] || key;
-  }
-
-  deleteEmployee(id) {
-    const data = this.getData();
-    data.employees = data.employees.filter(emp => emp.id !== id);
-    this.save(data);
-  }
-
-  addApplication(app) {
-    const data = this.getData();
-    const newApp = {
-      ...app,
-      id: Date.now(),
-      status: 'Pending Approval',
-      appliedAt: new Date().toISOString()
-    };
-    data.applications.push(newApp);
-
-    this.addLedgerEntry(newApp.employeeId, `Leave Request: ${newApp.numDays} Days ${newApp.type}`, 'Pending Approval', data);
-    this.save(data);
-    return newApp;
-  }
-
-  getApplications() {
-    return this.getData().applications;
-  }
-
-  approveApplication(appId) {
-    const data = this.getData();
-    const appIndex = data.applications.findIndex(a => a.id === appId);
-    if (appIndex === -1) return;
-
-    const app = data.applications[appIndex];
-    if (app.status !== 'Pending Approval') return;
-
-    app.status = 'Approved';
-
-    const employee = data.employees.find(e => e.id === app.employeeId);
-    if (employee) {
-      const typeKey = this.mapTypeToKey(app.type);
-      const currentBalance = parseFloat(employee.balances[typeKey]);
-      const appliedDays = parseFloat(app.numDays);
-
-      const isEarnedLeave = typeKey === 'vacationLeave' || typeKey === 'sickLeave';
-
-      if (!isEarnedLeave) {
-        // STRICT ENFORCEMENT for Privileges
-        if (currentBalance < appliedDays) {
-          throw new Error(`Insufficient ${app.type} privileges.`);
-        }
-        employee.balances[typeKey] = currentBalance - appliedDays;
-        this.addLedgerEntry(app.employeeId, `Approved: ${appliedDays.toFixed(3)} Days ${app.type}`, 'Approved', data);
-      } else {
-        // EARNED LEAVE (VL/SL) - Support Split
-        const paidDays = Math.min(appliedDays, currentBalance);
-        const unpaidDays = Math.max(0, appliedDays - paidDays);
-        employee.balances[typeKey] = currentBalance - paidDays;
-
-        const detail = unpaidDays > 0
-          ? `${app.numDays} Days ${app.type} (${paidDays.toFixed(3)} Under Time w/ Pay, ${unpaidDays.toFixed(3)} w/o Pay)`
-          : `${app.numDays} Days ${app.type} (All Under Time w/ Pay)`;
-
-        this.addLedgerEntry(app.employeeId, `Approved: ${detail}`, 'Approved', data);
-      }
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to add employee');
     }
-
-    this.save(data);
+    return res.json();
   }
 
-  rejectApplication(appId) {
-    const data = this.getData();
-    const app = data.applications.find(a => a.id === appId);
-    if (app) {
-      app.status = 'Rejected';
-      this.addLedgerEntry(app.employeeId, `Rejected: ${app.numDays} Days ${app.type}`, 'Rejected', data);
-      this.save(data);
-    }
-  }
-
-  generateMonthlyCredits(month, year) {
-    const data = this.getData();
-    const periodKey = `${year}-${String(month).padStart(2, '0')}`;
-
-    if (data.generatedPeriods && data.generatedPeriods.includes(periodKey)) {
-      throw new Error(`Credits for ${month}/${year} have already been generated.`);
-    }
-
-    data.employees.filter(e => e.isActive).forEach(emp => {
-      emp.balances.vacationLeave = addMonthlyCredits(parseFloat(emp.balances.vacationLeave));
-      emp.balances.sickLeave = addMonthlyCredits(parseFloat(emp.balances.sickLeave));
+  async updateEmployee(updatedEmp) {
+    const res = await fetch(`${API_BASE}/employees/${updatedEmp.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedEmp)
     });
-
-    if (!data.generatedPeriods) data.generatedPeriods = [];
-    data.generatedPeriods.push(periodKey);
-
-    this.addLedgerEntry('SYSTEM', `Generated Monthly 1.25 Credits for ${month}/${year}`, 'COMPLETED', data);
-    this.save(data);
-  }
-
-  addLedgerEntry(employeeId, transaction, status, existingData = null) {
-    const data = existingData || this.getData();
-    const emp = data.employees.find(e => e.id === employeeId);
-
-    const balancesSnapshot = emp ? { ...emp.balances } : null;
-
-    data.ledger.unshift({
-      id: Date.now() + Math.random(),
-      date: new Date().toISOString(),
-      employeeId: employeeId,
-      employeeName: emp ? emp.fullName : 'System',
-      transaction: transaction,
-      status: status,
-      balancesAfter: balancesSnapshot
-    });
-
-    if (!existingData) {
-      this.save(data);
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to update employee');
     }
+    return res.json();
   }
 
-  getLedger() {
-    return this.getData().ledger;
+  async updateEmployeeBalances(employeeId, newBalances) {
+    const res = await fetch(`${API_BASE}/employees/${employeeId}/balances`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBalances)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to update balances');
+    }
+    return res.json();
   }
 
-  checkAndResetYearlyPrivileges() {
-    const data = this.getData();
-    const currentYear = new Date().getFullYear();
-    const lastReset = data.lastResetYear || 0;
+  async deleteEmployee(id) {
+    const res = await fetch(`${API_BASE}/employees/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('Failed to delete employee');
+    return res.json();
+  }
 
-    if (currentYear > lastReset) {
-      data.employees.forEach(emp => {
-        emp.balances.specialLeave = LEAVE_DEFAULTS.specialLeave;
-        emp.balances.forceLeave = LEAVE_DEFAULTS.forceLeave;
-        emp.balances.wellnessLeave = LEAVE_DEFAULTS.wellnessLeave;
-        emp.balances.soloParentLeave = LEAVE_DEFAULTS.soloParentLeave;
+  // ==================== APPLICATIONS ====================
 
-        this.addLedgerEntry(emp.id, `Annual Reset: Privilege balances restored for ${currentYear}`, 'COMPLETED', data);
+  async getApplications() {
+    const res = await fetch(`${API_BASE}/applications`);
+    if (!res.ok) throw new Error('Failed to fetch applications');
+    return res.json();
+  }
+
+  async addApplication(app) {
+    const res = await fetch(`${API_BASE}/applications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(app)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to create application');
+    }
+    return res.json();
+  }
+
+  async approveApplication(appId) {
+    const res = await fetch(`${API_BASE}/applications/${appId}/approve`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to approve application');
+    }
+    return res.json();
+  }
+
+  async rejectApplication(appId) {
+    const res = await fetch(`${API_BASE}/applications/${appId}/reject`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to reject application');
+    }
+    return res.json();
+  }
+
+  // ==================== LEDGER ====================
+
+  async getLedger() {
+    const res = await fetch(`${API_BASE}/ledger`);
+    if (!res.ok) throw new Error('Failed to fetch ledger');
+    return res.json();
+  }
+
+  // ==================== SYSTEM ====================
+
+  async generateMonthlyCredits(month, year) {
+    const res = await fetch(`${API_BASE}/system/credits/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ month, year })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to generate credits');
+    }
+    return res.json();
+  }
+
+  async checkAndResetYearlyPrivileges() {
+    try {
+      await fetch(`${API_BASE}/system/yearly-reset`, {
+        method: 'POST'
       });
-      data.lastResetYear = currentYear;
-      this.save(data);
+    } catch (err) {
+      console.warn('Yearly reset check failed (backend may not be running yet):', err.message);
     }
-  }
-
-  mapTypeToKey(type) {
-    const mapping = {
-      'Vacation Leave': 'vacationLeave',
-      'Sick Leave': 'sickLeave',
-      'Special Leave': 'specialLeave',
-      'Force Leave': 'forceLeave',
-      'Wellness Leave': 'wellnessLeave',
-      'Solo Parent Leave': 'soloParentLeave'
-    };
-    return mapping[type] || type;
   }
 }
 
