@@ -1142,20 +1142,294 @@ h3 {
 
 .balance-snapshot-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 8px;
-  font-size: 0.7rem;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  font-size: 0.9rem;
   color: var(--text-muted);
-  margin-top: 8px;
+  margin-top: 12px;
   border-top: 1px solid var(--border);
-  padding-top: 8px;
+  padding-top: 12px;
 }
 
 .snapshot-item {
   background: #f8fafc;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   border: 1px solid #e2e8f0;
   font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* ============================================================
+   PRINT LEAVE CARD STYLES
+   Self-contained — does NOT override any existing styles.
+   ============================================================ */
+
+/* Hide the printable area on screen */
+.print-area {
+  display: none;
+}
+
+/* Spinning loader animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* === ON-SCREEN PRINT PAGE PREVIEW (inside modal) === */
+.print-page {
+  width: 100%;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 11px;
+  color: #000;
+  background: #fff;
+}
+
+/* Title */
+.print-title {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+/* Header info table */
+.print-header-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+  border: 1px solid #000;
+}
+
+.print-header-table td {
+  padding: 2px 6px;
+  border: 1px solid #000;
+  font-size: 11px;
+  vertical-align: top;
+}
+
+.print-label {
+  font-weight: 700;
+  width: 80px;
+  font-size: 10px;
+}
+
+.print-value {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.print-value-wide {
+  min-width: 200px;
+}
+
+.print-label-right {
+  font-weight: 700;
+  font-size: 10px;
+  text-align: right;
+  width: 110px;
+}
+
+.print-value-gsis {
+  font-size: 11px;
+  min-width: 120px;
+  border-bottom: 1px solid #000;
+  padding-left: 4px !important;
+}
+
+/* Main leave data table */
+.print-leave-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  table-layout: fixed;
+}
+
+.print-leave-table th,
+.print-leave-table td {
+  border: 1px solid #000;
+  padding: 1px 3px;
+  text-align: center;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.print-group-header {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f0f0f0;
+}
+
+.print-sub-header {
   font-weight: 600;
+  font-size: 9px;
+}
+
+.print-sub-sub-header {
+  font-weight: 600;
+  font-size: 8px;
+}
+
+.print-col-period {
+  width: 70px;
+  font-weight: 600;
+  font-size: 9px;
+}
+
+.print-col-particular {
+  width: 100px;
+  font-weight: 600;
+  font-size: 9px;
+}
+
+.print-col-remarks {
+  width: 60px;
+  font-weight: 600;
+  font-size: 9px;
+}
+
+/* Balance columns get shading */
+.print-col-balance {
+  background: rgba(255, 200, 150, 0.35) !important;
+}
+
+.print-bal-value {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+/* Year separator row */
+.print-year-row td {
+  height: 4px;
+  background: #3b82f6;
+  padding: 0;
+}
+
+/* Balance Brought Forward row */
+.print-balance-fwd-row td {
+  font-weight: 600;
+  font-size: 10px;
+  height: 32px;
+}
+
+.print-year-label {
+  font-weight: 800;
+  font-size: 13px;
+  font-style: italic;
+  text-align: left !important;
+  padding-left: 6px !important;
+}
+
+.print-particular-fwd {
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* Data row cells */
+.print-data-row td {
+  height: 18px;
+}
+
+.print-cell-period {
+  text-align: left !important;
+  padding-left: 4px !important;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.print-cell-particular {
+  text-align: left !important;
+  padding-left: 4px !important;
+  font-size: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.print-cell-num {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+}
+
+.print-cell-remarks {
+  font-size: 8px;
+}
+
+/* ============================================================
+   @MEDIA PRINT — Only these rules activate when printing.
+   Hides entire app UI and shows only the leave card pages.
+   ============================================================ */
+@media print {
+  /* Hide the main React app root and any modal overlays */
+  #root {
+    display: none !important;
+  }
+
+  .modal-overlay {
+    display: none !important;
+  }
+
+  /* Show ONLY the portal-rendered print area (direct child of body) */
+  body > .print-area {
+    display: block !important;
+    position: static;
+    width: 100%;
+  }
+
+  /* A4 landscape — zero @page margin hides browser title/date headers.
+     Content spacing is handled by padding on .print-area instead. */
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  /* Each .print-page becomes its own printed page with consistent 15mm margins */
+  .print-page {
+    padding: 15mm;
+    box-sizing: border-box;
+    width: 100%;
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  /* Ensure colors print correctly */
+  .print-col-balance {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: rgba(255, 200, 150, 0.35) !important;
+  }
+
+  .print-year-row td {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #3b82f6 !important;
+  }
+
+  .print-group-header {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #f0f0f0 !important;
+  }
+
+  /* Page text styling */
+  .print-page {
+    font-size: 11px;
+    color: #000;
+    background: #fff;
+  }
 }

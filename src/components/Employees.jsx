@@ -7,6 +7,7 @@ import RegisterEmployeeModal from './RegisterEmployeeModal';
 import EditBalanceModal from './EditBalanceModal';
 import EditEmployeeModal from './EditEmployeeModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import PrintLeaveCardModal from './PrintLeaveCardModal';
 import { formatCredits } from '../utils/leaveLogic';
 
 const Employees = () => {
@@ -18,6 +19,8 @@ const Employees = () => {
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printEmployee, setPrintEmployee] = useState(null);
 
   // Sync selected employee after update
   const currentEmp = employees.find(e => e.id === selectedEmp?.id) || selectedEmp;
@@ -82,7 +85,7 @@ const Employees = () => {
                   <td><span className="badge badge-approved">{emp.status}</span></td>
                   <td>
                     <div className="action-btns">
-                      <button className="icon-btn text-primary" title="Print Record"><Printer size={18} /></button>
+                      <button className="icon-btn text-primary" title="Print Record" onClick={(e) => { e.stopPropagation(); setPrintEmployee(emp); setIsPrintModalOpen(true); }}><Printer size={18} /></button>
                     </div>
                   </td>
                 </tr>
@@ -217,6 +220,13 @@ const Employees = () => {
           employee={empToDelete}
           onConfirm={deleteEmployee}
           onClose={() => setEmpToDelete(null)}
+        />
+      )}
+
+      {isPrintModalOpen && printEmployee && (
+        <PrintLeaveCardModal
+          employee={printEmployee}
+          onClose={() => { setIsPrintModalOpen(false); setPrintEmployee(null); }}
         />
       )}
     </div>

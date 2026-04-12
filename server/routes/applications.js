@@ -157,7 +157,7 @@ router.post('/:id/approve', async (req, res) => {
         [newBalance, app.employee_id]
       );
 
-      await addLedgerEntry(conn, app.employee_id, `Approved: ${appliedDays.toFixed(3)} Days ${app.leave_type}`, 'Approved');
+      await addLedgerEntry(conn, app.employee_id, `Approved: ${Number(appliedDays)} Days ${app.leave_type} (All Under Time w/ Pay)`, 'Approved');
     } else {
       // EARNED LEAVE (VL/SL) - Support Split (with pay / without pay)
       const paidDays = Math.min(appliedDays, currentBalance);

@@ -70,7 +70,7 @@ const EncodeLeaveModal = ({ employee, onClose }) => {
 
     if (selectedType.category === 'Privilege') {
       if (numDays > currentBalance) {
-        setError(`Insufficient Privileges: You only have ${currentBalance.toFixed(3)} days of ${formData.type} left for this year.`);
+        setError(`Insufficient Paid Credits: You only have ${currentBalance.toFixed(3)} days of ${formData.type} remaining for this year. Please adjust your request to fit your available balance.`);
         return;
       }
     }

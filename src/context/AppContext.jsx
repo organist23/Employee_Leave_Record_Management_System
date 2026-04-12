@@ -11,6 +11,7 @@ export const AppProvider = ({ children }) => {
     ledger: []
   });
   const [loading, setLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('elrms_user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -49,8 +50,13 @@ export const AppProvider = ({ children }) => {
   };
 
   const logout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     setUser(null);
     localStorage.removeItem('elrms_user');
+    setShowLogoutModal(false);
   };
 
   useEffect(() => {
@@ -116,6 +122,32 @@ export const AppProvider = ({ children }) => {
       refreshData
     }}>
       {children}
+      {showLogoutModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <div className="modal-header" style={{ marginBottom: '1rem' }}>
+              <h2 style={{ fontSize: '1.25rem', color: '#0f172a', margin: 0 }}>Confirm Logout</h2>
+            </div>
+            <p style={{ color: '#475569', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Are you sure you want to securely log out of the system?
+            </p>
+            <div className="modal-footer" style={{ marginTop: '0', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowLogoutModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                style={{ background: 'var(--danger)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                onClick={confirmLogout}
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppContext.Provider>
   );
 };

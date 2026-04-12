@@ -6,6 +6,7 @@ import applicationsRouter from './routes/applications.js';
 import ledgerRouter from './routes/ledger.js';
 import systemRouter from './routes/system.js';
 import authRouter from './routes/auth.js';
+import printRouter from './routes/print.js';
 
 const app = express();
 const PORT = 5000;
@@ -20,6 +21,7 @@ app.use('/api/employees', employeesRouter);
 app.use('/api/applications', applicationsRouter);
 app.use('/api/ledger', ledgerRouter);
 app.use('/api/system', systemRouter);
+app.use('/api/print', printRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
